@@ -317,7 +317,7 @@ Ext.extend(MODx.panel.Resource,MODx.FormPanel,{
     }
     ,generateAliasRealTime: function(title) {
         // check some system settings before doing real time alias transliteration
-        if (MODx.config.friendly_alias_realtime && MODx.config.automatic_alias) {
+        if (parseInt(MODx.config.friendly_alias_realtime) && parseInt(MODx.config.automatic_alias)) {
             // handles the realtime-alias transliteration
             if (this.config.aliaswasempty && title !== '') {
                 this.translitAlias(title);
@@ -336,7 +336,7 @@ Ext.extend(MODx.panel.Resource,MODx.FormPanel,{
                     this.warnUnsavedChanges = false;
                     MODx.activePage.submitForm({
                         success: {fn:function(r) {
-                            MODx.loadPage(r.result.object.action, 'id='+r.result.object.id+'&reload='+r.result.object.reload + '&class_key='+ r.result.object.class_key);
+                            MODx.loadPage(r.result.object.action, 'id='+r.result.object.id+'&reload='+r.result.object.reload + '&class_key='+ r.result.object.class_key + '&context_key='+ r.result.object.context_key);
                         },scope:this}
                     },{
                         bypassValidCheck: true

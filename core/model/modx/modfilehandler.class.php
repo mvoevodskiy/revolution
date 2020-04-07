@@ -49,7 +49,7 @@ class modFileHandler {
      * @param array $options Optional. An array of options for the object.
      * @param string $overrideClass Optional. If provided, will force creation
      * of the object as the specified class.
-     * @return mixed The appropriate modFile/modDirectory object
+     * @return modFile|modDirectory The appropriate modFile/modDirectory object
      */
     public function make($path, array $options = array(), $overrideClass = '') {
         $path = $this->sanitizePath($path);
@@ -496,8 +496,13 @@ class modFile extends modFileSystemResource {
 
         $results = false;
 
-        if ($this->fileHandler->modx->getService('archive', 'compression.xPDOZip', XPDO_CORE_PATH, $this->path)) {
-            $results = $this->fileHandler->modx->archive->unpack($to);
+        /** @var xPDOZip $archive */
+        $archive = $this->fileHandler->modx->getService('archive', 'compression.xPDOZip', XPDO_CORE_PATH, $this->path);
+        if ($archive) {
+            if (isset($options['check_filetype']) && $options['check_filetype'] == true) {
+                $options[xPDOZip::ALLOWED_EXTENSIONS] = $this->getAllowedExtensions();
+            }
+            $results = $archive->unpack($to, $options);
         }
 
         return $results;
@@ -565,7 +570,7 @@ class modFile extends modFileSystemResource {
      *
      * @param array $options Optional configuration options like mimetype and filename
      *
-     * @return downloadable file
+     * @noreturn downloadable file
      */
     public function download($options = array()) {
         $options = array_merge(array(
@@ -591,6 +596,24 @@ class modFile extends modFileSystemResource {
     public function remove() {
         if (!$this->exists()) return false;
         return @unlink($this->path);
+    }
+
+    /**
+     * Get allowed extensions
+     * @TODO use this for an upload check too
+     *
+     * @return mixed
+     */
+    public function getAllowedExtensions() {
+        if (!$this->fileHandler->modx->getOption('allowedExtensions')) {
+            $allowedFiles = $this->fileHandler->modx->getOption('upload_files') ? explode(',', $this->fileHandler->modx->getOption('upload_files')) : array();
+            $allowedImages = $this->fileHandler->modx->getOption('upload_images') ? explode(',', $this->fileHandler->modx->getOption('upload_images')) : array();
+            $allowedMedia = $this->fileHandler->modx->getOption('upload_media') ? explode(',', $this->fileHandler->modx->getOption('upload_media')) : array();
+            $allowedFlash = $this->fileHandler->modx->getOption('upload_flash') ? explode(',', $this->fileHandler->modx->getOption('upload_flash')) : array();
+            $allowedExtensions = array_unique(array_merge($allowedFiles, $allowedImages, $allowedMedia, $allowedFlash));
+            $this->fileHandler->modx->setOption('allowedExtensions', $allowedExtensions);
+        }
+        return $this->fileHandler->modx->getOption('allowedExtensions');
     }
 }
 
